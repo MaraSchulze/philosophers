@@ -6,7 +6,7 @@
 /*   By: marschul <marschul@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 13:34:37 by marschul          #+#    #+#             */
-/*   Updated: 2023/12/12 21:45:08 by marschul         ###   ########.fr       */
+/*   Updated: 2023/12/15 20:11:25 by marschul         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,9 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <pthread.h>
+
+#include <string.h> // debug
+#include <assert.h>
 
 typedef struct s_forks {
 	int				fork;
@@ -50,7 +53,7 @@ int		get_args(t_main_data *main_data, int argc, char **argv);
 int		init_locks(t_main_data *main_data);
 int		create_datastructures(t_main_data *main_data, pthread_t **threads, t_data **data);
 int		start_threads(t_main_data *main_data, pthread_t *threads, t_data *data);
-void	join_threads(t_main_data *main_data, pthread_t *threads);
+int		join_threads(t_main_data *main_data, pthread_t *threads);
 void	*philosopher(void *data);
 int		ft_atoi(const char *str);
 void	debug_print(t_data *data);

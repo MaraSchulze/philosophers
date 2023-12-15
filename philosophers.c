@@ -6,7 +6,7 @@
 /*   By: marschul <marschul@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 13:36:21 by marschul          #+#    #+#             */
-/*   Updated: 2023/12/12 22:35:43 by marschul         ###   ########.fr       */
+/*   Updated: 2023/12/15 22:53:12 by marschul         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,53 +37,96 @@ int	die(int	dying_time, t_data *data)
 {
 	struct timeval	timestamp;
 
+	printf("%d in die\n", data->number);
+
+	// pthread_mutex_lock(data->logger);
+	// printf("begin %d : ", data->number);
+	// for (int i = 0; i < 30; i++)
+	// {
+	// 	pthread_mutex_lock(&data->forks[i].fork_lock);
+	// 	printf("%d ", data->forks[i].fork);
+	// 	pthread_mutex_lock(&data->forks[i].fork_lock);
+
+	// }
+	// printf("end \n");
+	// pthread_mutex_unlock(data->logger);
+	printf("dying time %d %d\n", data->number, dying_time);
+	assert(dying_time > 0 && dying_time <= data->time_to_die);
 	usleep(dying_time * 1000);
+
 	if (gettimeofday(&timestamp, NULL) != 0)
 		return (0);
 	do_log(timestamp, data, "died");
+
+
+	
 	return (0);
 }
 
-int	try_fork(t_data *data, int left, int right)
+int	try_forks(t_data *data, int left)
 {
+	int	right;
+	
+		printf("Trying %d\n : ", data->number);
+
+	// pthread_mutex_lock(data->logger);
+	// printf("Trying %d : ", data->number);
+	// // for (int i = 0; i < data->nr_philosophers; i++)
+	// // {
+	// // 	pthread_mutex_lock(&data->forks[i].fork_lock);
+	// // 	printf("%d ", data->forks[i].fork);
+	// // 	pthread_mutex_unlock(&data->forks[i].fork_lock);
+	// // }
+	// printf("\n");
+	// pthread_mutex_unlock(data->logger);
+		printf("Trying 2%d\n : ", data->number);
+
+	right = data->number % data->nr_philosophers;
 	pthread_mutex_lock(&data->forks[left].fork_lock);
 	if (data->forks[left].fork == 0)
 	{
 		data->forks[left].fork = data->number;
 		pthread_mutex_unlock(&data->forks[left].fork_lock);
-		return (1);
+		pthread_mutex_lock(&data->forks[right].fork_lock);
+		if (data->forks[right].fork == 0)
+		{
+			data->forks[right].fork = data->number;
+			pthread_mutex_unlock(&data->forks[right].fork_lock);
+			return (1);
+		}
+		else
+		{
+			printf("------- %d is disappointed\n", data->number);
+			pthread_mutex_unlock(&data->forks[right].fork_lock);
+			pthread_mutex_lock(&data->forks[left].fork_lock);
+			assert(data->forks[left].fork == data->number);
+			data->forks[left].fork = 0;
+			pthread_mutex_unlock(&data->forks[left].fork_lock);
+			return (0);
+		}
 	}
 	else
 	{
 		pthread_mutex_unlock(&data->forks[left].fork_lock);
-		pthread_mutex_lock(&data->forks[right].fork_lock);
-		if (data->forks[right].fork == data->number)
-		{
-			data->forks[right].fork = 0;
-			return (-1);
-		}
-		pthread_mutex_unlock(&data->forks[right].fork_lock);
-		usleep(data->number);
 		return (0);
 	}
 }
 
 int	take_forks(t_data *data)
 {
-	int				nr_forks;
+	int				success;
 	struct timeval	timestamp;
 
-	nr_forks = 0;
-	while (nr_forks < 2)
-	{
-		nr_forks += try_fork(data, data->number - 1, data->number % data->nr_philosophers);
-		if (nr_forks == 2)
-			break;
-		nr_forks += try_fork(data, data->number % data->nr_philosophers, data->number - 1);
+	success = 0;
+	while (success != 1)
+	{	
+		success = try_forks(data, data->number - 1);
+		if (success == 0)
+			usleep(data->number * 10);
 	}
 	if (gettimeofday(&timestamp, NULL) != 0)
 		return (0);
-	do_log(timestamp, data, "has taken a fork");
+	do_log(timestamp, data, "has taken two forks");
 	return (1);
 }
 
@@ -93,14 +136,29 @@ int	eat(t_data *data)
 	int				left;
 	int				right;
 
+		printf("%d in eat\n", data->number);
+
 	if (gettimeofday(&timestamp, NULL) != 0)
 		return (0);
-	if (get_ms(data->eat_time, timestamp) + data->time_to_eat > data->time_to_die)
-		return (die(data->time_to_die - get_ms(data->eat_time, timestamp), data));
-	do_log(timestamp, data, "is eating");
-	usleep(data->time_to_eat * 1000);
 	left = data->number - 1;
 	right = data->number % data->nr_philosophers;
+	if (get_ms(data->eat_time, timestamp) + data->time_to_eat > data->time_to_die)
+	{
+		printf("%d here\n", data->number);
+
+		pthread_mutex_lock(&data->forks[left].fork_lock);
+		data->forks[left].fork = 0;
+		pthread_mutex_unlock(&data->forks[left].fork_lock);
+		printf("%d here\n", data->number);
+
+		pthread_mutex_lock(&data->forks[right].fork_lock);
+		data->forks[right].fork = 0;
+		pthread_mutex_unlock(&data->forks[right].fork_lock);
+		printf("%d here\n", data->number);
+		return (die(data->time_to_die - (get_ms(data->eat_time, timestamp) + data->time_to_eat), data));
+	}
+	do_log(timestamp, data, "is eating");
+	usleep(data->time_to_eat * 1000);
 	pthread_mutex_lock(&data->forks[left].fork_lock);
 	data->forks[left].fork = 0;
 	pthread_mutex_unlock(&data->forks[left].fork_lock);
@@ -131,7 +189,6 @@ void	*philosopher(void *data)
 	int				loops;
 
 	this_data = (t_data *) data;
-	debug_print(data);
 	loops = this_data->nr_meals;
 	while (loops != 0)
 	{

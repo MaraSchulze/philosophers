@@ -6,7 +6,7 @@
 /*   By: marschul <marschul@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 13:35:52 by marschul          #+#    #+#             */
-/*   Updated: 2023/12/12 21:06:10 by marschul         ###   ########.fr       */
+/*   Updated: 2023/12/15 18:18:33 by marschul         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,4 +29,7 @@ int	main(int argc, char **argv)
 	if (start_threads(&main_data, threads, data) == 0)
 		return (-1);
 	join_threads(&main_data, threads);
+	free(threads);
+	free(main_data.forks);
+	free(data);
 }

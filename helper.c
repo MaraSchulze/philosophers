@@ -6,7 +6,7 @@
 /*   By: marschul <marschul@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:01:14 by marschul          #+#    #+#             */
-/*   Updated: 2023/12/12 21:58:13 by marschul         ###   ########.fr       */
+/*   Updated: 2023/12/15 16:52:28 by marschul         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ int	init_locks(t_main_data *main_data)
 	{
 	if (pthread_mutex_init(&main_data->forks[i].fork_lock, NULL) != 0)
 		return (0);
-		i++;
+	i++;
 	}
 	return (1);
 }

@@ -1,5 +1,5 @@
 NAME = philosophers
-FLAGS = -Wall -Wextra
+FLAGS = -Wall -Wextra -pthread
 SOURCES = main.c philosophers.c helper.c threads.c tools.c
 OBJECTS = $(SOURCES:.c=.o)
 
