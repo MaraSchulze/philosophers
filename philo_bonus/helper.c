@@ -6,7 +6,7 @@
 /*   By: marschul <marschul@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/12 14:01:14 by marschul          #+#    #+#             */
-/*   Updated: 2023/12/15 16:52:28 by marschul         ###   ########.fr       */
+/*   Updated: 2023/12/19 03:48:18 by marschul         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,17 +30,8 @@ int	get_args(t_main_data *main_data, int argc, char **argv)
 
 int	init_locks(t_main_data *main_data)
 {
-	int	i;
-
 	if (pthread_mutex_init(&main_data->logger, NULL) != 0)
 		return (0);
-	i = 0;
-	while (i < main_data->nr_philosophers)
-	{
-	if (pthread_mutex_init(&main_data->forks[i].fork_lock, NULL) != 0)
-		return (0);
-	i++;
-	}
 	return (1);
 }
 
@@ -55,37 +46,35 @@ void	fill_in_data(t_data *data, int i, t_main_data *main_data)
 	data[i].start_time = main_data->start_time;
 	data[i].eat_time = main_data->start_time;
 	data[i].logger = &main_data->logger;
-	data[i].forks = main_data->forks;
+	data[i].sem = main_data->sem;
+	data[i].token = &main_data->token;
+	data[i].stop = &main_data->stop;
 }
 
-int	create_datastructures(t_main_data *main_data, pthread_t **threads, t_data **data)
+int	create_datastructures(t_main_data *main_data, pthread_t **threads, \
+	t_data **data)
 {
 	int	i;
 
 	*data = (t_data *) malloc(main_data->nr_philosophers * sizeof(t_data));
 	if (*data == NULL)
 		return (0);
-	*threads = (pthread_t *) malloc(main_data->nr_philosophers * sizeof(pthread_t));
+	*threads = (pthread_t *) malloc(main_data->nr_philosophers * \
+		sizeof(pthread_t));
 	if (*threads == NULL)
 		return (0);
-	main_data->forks = (t_forks *) malloc(main_data->nr_philosophers * sizeof(t_forks));
-	if (main_data->forks == NULL)
+	sem_unlink("tes");
+	main_data->sem = sem_open("tes", O_CREAT | O_EXCL, S_IRWXU, \
+		(unsigned int) main_data->nr_philosophers);
+	if (main_data->sem == SEM_FAILED)
 		return (0);
+	main_data->token = 0;
+	main_data->stop = 0;
 	i = 0;
 	while (i < main_data->nr_philosophers)
 	{
-		main_data->forks[i].fork = 0;
 		fill_in_data(*data, i, main_data);
 		i++;
 	}
 	return (1);
-}
-
-void	debug_print(t_data *data)
-{
-	printf("address %p\n", data);
-	printf("number %d\n", data->number);
-	printf("nr phils %d\n", data->nr_philosophers);
-	printf("lock left %p %d\n", &data->forks[data->number - 1].fork_lock, data->number - 1);
-	printf("lock right %p %d\n", &data->forks[data->number % data->nr_philosophers].fork_lock, data->number % data->nr_philosophers);
 }
